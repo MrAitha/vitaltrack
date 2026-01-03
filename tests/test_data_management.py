@@ -4,6 +4,7 @@ Test data management functionality including export
 import pytest
 import time
 import os
+import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -222,3 +223,57 @@ class TestDataManagement:
             "Should show meals logged stat on dashboard"
         assert "1" in dashboard_content, \
             "Should show at least 1 meal in stats"
+
+    def test_import_data_functionality(self, driver, base_url):
+        wait = WebDriverWait(driver, 10)
+        # 1. Create a temporary import file
+        import_file_path = os.path.abspath("test_import.json")
+        test_data = {
+            "meals": [
+                {"id": 12345, "name": "Imported Sushi", "ingredients": "Rice, Fish", "timestamp": "2026-01-01T12:00:00.000Z"}
+            ],
+            "symptoms": [
+                {"id": 67890, "symptom": "energy", "severity": 8, "timestamp": "2026-01-01T13:00:00.000Z"}
+            ],
+            "settings": {"theme": "light"}
+        }
+        with open(import_file_path, "w") as f:
+            json.dump(test_data, f)
+            
+        try:
+            driver.get(base_url)
+            
+            # 2. Navigate to Data Management
+            data_btn = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-view="data"]'))
+            )
+            data_btn.click()
+            
+            # 3. Trigger import via hidden input
+            file_input = driver.find_element(By.ID, "import-file-input")
+            # Make sure it's accessible for Selenium
+            driver.execute_script("arguments[0].style.display = 'block';", file_input)
+            file_input.send_keys(import_file_path)
+            
+            # 4. Handle confirmation dialog (browser alert)
+            wait.until(EC.alert_is_present())
+            alert = driver.switch_to.alert
+            alert.accept()
+            
+            # 5. Wait for reload/success alert
+            wait.until(EC.alert_is_present())
+            alert = driver.switch_to.alert
+            assert "successfully" in alert.text.lower()
+            alert.accept()
+            
+            # 6. Navigate to Logs and verify the imported meal exists
+            logs_btn = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-view="logs"]'))
+            )
+            logs_btn.click()
+            
+            wait.until(lambda d: "imported sushi" in d.find_element(By.ID, "main-view").text.lower())
+            
+        finally:
+            if os.path.exists(import_file_path):
+                os.remove(import_file_path)

@@ -1,0 +1,1 @@
+{"meals": [{"id": 12345, "name": "Imported Sushi", "ingredients": "Rice, Fish", "timestamp": "2026-01-01T12:00:00.000Z"}], "symptoms": [{"id": 67890, "symptom": "energy", "severity": 8, "timestamp": "2026-01-01T13:00:00.000Z"}], "settings": {"theme": "light"}}

@@ -190,4 +190,24 @@ window.Store = class Store {
             }))
             .sort((a, b) => b.count - a.count);
     }
+
+    importData(data) {
+        try {
+            if (!data.meals || !data.symptoms) {
+                throw new Error('Invalid data format: missing meals or symptoms arrays.');
+            }
+
+            this.data = {
+                meals: data.meals,
+                symptoms: data.symptoms,
+                settings: data.settings || { theme: 'light' }
+            };
+
+            this.save();
+            return true;
+        } catch (error) {
+            console.error('Import failed:', error);
+            return false;
+        }
+    }
 }

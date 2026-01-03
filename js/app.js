@@ -314,6 +314,11 @@ class App {
                     <button id="export-btn" class="btn btn-primary">
                         <span style="margin-right: 0.5rem;">📥</span> Export as JSON
                     </button>
+                    
+                    <button id="import-trigger-btn" class="btn btn-secondary">
+                        <span style="margin-right: 0.5rem;">📤</span> Import JSON
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
                 </div>
 
                 <div style="margin-top: 3rem; padding: 1.5rem; background: rgba(239, 68, 68, 0.05); border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
@@ -325,6 +330,40 @@ class App {
         `;
 
         document.getElementById('export-btn').onclick = () => this.store.exportData();
+
+        const importBtn = document.getElementById('import-trigger-btn');
+        const fileInput = document.getElementById('import-file-input');
+
+        importBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (confirm('Importing data will OVERWRITE your current data. Are you sure you want to proceed?')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        const success = this.store.importData(importedData);
+
+                        if (success) {
+                            alert('Data imported successfully!');
+                            location.reload();
+                        } else {
+                            alert('Failed to import data. Please ensure the file is a valid VitalTrack export.');
+                        }
+                    } catch (err) {
+                        alert('Error parsing JSON file.');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+            }
+            // Reset input so the same file can be selected again if needed
+            fileInput.value = '';
+        };
+
         document.getElementById('clear-data-btn').onclick = () => {
             if (confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
                 localStorage.removeItem(this.store.storageKey);

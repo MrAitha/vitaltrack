@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>VitalTrack Test Runner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        #mocha-stats em {
+            color: #fff;
+        }
+
+        #mocha-report .suite h1 {
+            color: #38bdf8;
+        }
+
+        #mocha-report .test h2 {
+            color: #94a3b8;
+        }
+
+        #mocha-report .test.pass::before {
+            color: #22c55e;
+        }
+
+        #mocha-report .test.fail::before {
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="mocha"></div>
+
+    <!-- Test Frameworks -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sinon.js/15.0.1/sinon.min.js"></script>
+
+    <script>
+        mocha.setup('bdd');
+        const expect = chai.expect;
+    </script>
+
+    <!-- Source Files -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/components/forms.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- UI Mock Elements for App Tests -->
+    <div id="test-sandbox" style="display: none;">
+        <div id="app">
+            <nav>
+                <button class="nav-item" data-view="dashboard">Dashboard</button>
+                <button class="nav-item" data-view="logs">Logs</button>
+            </nav>
+            <h2 id="view-title"></h2>
+            <div id="main-view"></div>
+            <button id="quick-meal-btn"></button>
+            <button id="quick-symptom-btn"></button>
+        </div>
+        <div id="modal-container"></div>
+    </div>
+
+    <!-- Test Files -->
+    <script>
+        describe('Store Class', () => {
+            let store;
+
+            beforeEach(() => {
+                localStorage.clear();
+                store = new Store();
+            });
+
+            it('should initialize with empty data', () => {
+                expect(store.data.meals).to.be.an('array').that.is.empty;
+                expect(store.data.symptoms).to.be.an('array').that.is.empty;
+            });
+
+            it('should add a meal', () => {
+                store.addMeal({ name: 'Pizza', ingredients: 'Cheese, Tomato' });
+                expect(store.data.meals).to.have.lengthOf(1);
+                expect(store.data.meals[0].name).to.equal('Pizza');
+            });
+
+            it('should add a symptom', () => {
+                store.addSymptom({ symptom: 'passing_gas', severity: 3 });
+                expect(store.data.symptoms).to.have.lengthOf(1);
+                expect(store.data.symptoms[0].symptom).to.equal('passing_gas');
+            });
+
+            it('should calculate stats correctly', () => {
+                store.addMeal({ name: 'Breakfast' });
+                store.addSymptom({ symptom: 'headache', severity: 2 });
+                const stats = store.getStats();
+                expect(stats.mealsToday).to.equal(1);
+                expect(stats.symptomsToday).to.equal(1);
+            });
+
+            it('should find correlations within 1-12h window', () => {
+                const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+                store.data.meals.push({
+                    id: 1,
+                    timestamp: fiveHoursAgo,
+                    name: 'Spicy Tacos',
+                    ingredients: 'Chili, Beef'
+                });
+                store.addSymptom({ symptom: 'pain', severity: 5 });
+
+                const correlations = store.getCorrelations('pain');
+                expect(correlations).to.have.length.at.least(1);
+                expect(correlations[0].name).to.equal('Spicy Tacos');
+            });
+
+            it('should include ingredients in correlations', () => {
+                const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+                store.data.meals.push({
+                    id: 1,
+                    timestamp: fiveHoursAgo,
+                    name: 'Salad',
+                    ingredients: 'Onion, Garlic'
+                });
+                store.addSymptom({ symptom: 'passing_gas', severity: 5 });
+
+                const correlations = store.getCorrelations('passing_gas');
+                const names = correlations.map(c => c.name);
+                expect(names).to.include('Ingredient: Onion');
+                expect(names).to.include('Ingredient: Garlic');
+            });
+
+            it('should ignore meals outside the 1-12h window', () => {
+                store.data.meals.push({
+                    id: 1,
+                    timestamp: new Date(Date.now() - 0.5 * 60 * 60 * 1000).toISOString(),
+                    name: 'Snack'
+                });
+                store.data.meals.push({
+                    id: 2,
+                    timestamp: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString(),
+                    name: 'Old Dinner'
+                });
+
+                store.addSymptom({ symptom: 'nausea', severity: 2 });
+
+                const correlations = store.getCorrelations('nausea');
+                expect(correlations).to.be.empty;
+            });
+        });
+
+        describe('App Class', () => {
+            let app;
+
+            beforeEach(() => {
+                localStorage.clear();
+                // We need to prevent the real App from initializing on DomContentLoaded during tests
+                // because it would try to hook into elements that might not exist yet or conflict.
+                // For testing, we create a fresh instance that uses our sandbox.
+                document.getElementById('test-sandbox').style.display = 'block';
+                app = new App();
+            });
+
+            afterEach(() => {
+                document.getElementById('test-sandbox').style.display = 'none';
+            });
+
+            it('should initialize with dashboard view', () => {
+                expect(app.currentView).to.equal('dashboard');
+                expect(document.getElementById('view-title').innerText).to.equal('Dashboard');
+            });
+
+            it('should switch views when navigating', () => {
+                const logsBtn = document.querySelector('.nav-item[data-view="logs"]');
+                logsBtn.click();
+                expect(app.currentView).to.equal('logs');
+                expect(document.getElementById('view-title').innerText).to.equal('Logs');
+            });
+
+            it('should open meal modal', () => {
+                app.openModal('meal');
+                const modal = document.getElementById('modal-container');
+                expect(modal.classList.contains('hidden')).to.be.false;
+                expect(modal.innerHTML).to.contain('Log Meal');
+            });
+
+            it('should open symptom modal', () => {
+                app.openModal('symptom');
+                const modal = document.getElementById('modal-container');
+                expect(modal.classList.contains('hidden')).to.be.false;
+                expect(modal.innerHTML).to.contain('Log Symptom');
+            });
+
+            it('should close modal', () => {
+                app.openModal('meal');
+                app.closeModal();
+                expect(document.getElementById('modal-container').classList.contains('hidden')).to.be.true;
+            });
+        });
+    </script>
+
+    <script>
+        mocha.run();
+    </script>
+</body>
+
+</html>

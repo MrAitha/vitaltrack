@@ -99,7 +99,9 @@ window.Store = class Store {
 
     getColorForSymptom(name) {
         const colors = {
-            'bloating': 'rgba(255, 99, 132, 0.6)',
+            'passing_gas': 'rgba(255, 99, 132, 0.6)',
+            'acidity': 'rgba(255, 159, 64, 0.6)',
+            'burping': 'rgba(255, 206, 86, 0.6)',
             'headache': 'rgba(54, 162, 235, 0.6)',
             'nausea': 'rgba(255, 206, 86, 0.6)',
             'fatigue': 'rgba(75, 192, 192, 0.6)',
@@ -156,7 +158,7 @@ window.Store = class Store {
                 const mealTime = new Date(meal.timestamp);
                 const diffHours = (symptomTime - mealTime) / (1000 * 60 * 60);
 
-                if (diffHours >= 2 && diffHours <= 24) {
+                if (diffHours >= 1 && diffHours <= 12) {
                     // Collect the meal name
                     triggersInWindow.add(meal.name);
 

@@ -190,7 +190,7 @@ class App {
 
             <div class="card analyzer-card">
                 <h3>🔍 Root Cause Analyzer</h3>
-                <p class="muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">Select a symptom to find potential dietary triggers from the 2-24 hours prior to each occurrence.</p>
+                <p class="muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">Select a symptom to find potential dietary triggers from the 1-12 hours prior to each occurrence.</p>
                 
                 <div class="analyzer-controls" style="margin-bottom: 2rem;">
                     <select id="symptom-analyzer-select" class="form-control" style="width: auto; min-width: 200px;">

@@ -60,7 +60,9 @@ window.Forms = {
                 <label>How are you feeling?</label>
                 <select id="symptom-type">
                     <option value="energy">Energy Levels</option>
-                    <option value="gas">Gas / Bloating</option>
+                    <option value="passing_gas">Passing Gas</option>
+                    <option value="acidity">Acidity</option>
+                    <option value="burping">Burping</option>
                     <option value="pain">Stomach Pain</option>
                     <option value="headache">Headache</option>
                     <option value="mood">Mood</option>

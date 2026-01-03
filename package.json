@@ -1,0 +1,15 @@
+{
+    "name": "vitaltrack",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Food & Symptom Tracker",
+    "main": "index.html",
+    "scripts": {
+        "test": "vitest"
+    },
+    "devDependencies": {
+        "@vitest/browser": "^4.0.16",
+        "jsdom": "^25.0.1",
+        "vitest": "^2.1.9"
+    }
+}
